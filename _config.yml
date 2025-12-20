@@ -1,0 +1,15 @@
+title: "Kant's Blog"
+description: "Notes in 中文 / English"
+theme: minima
+
+# 让 minima 主题显示在 header 的链接（可选）
+minima:
+  social_links:
+    - { platform: github,  user_url: "https://github.com/kant0907" }
+
+# 推荐开启（可选）
+plugins:
+  - jekyll-feed
+
+# 设定永久链接风格（可选）
+permalink: /:categories/:year/:month/:day/:title/
