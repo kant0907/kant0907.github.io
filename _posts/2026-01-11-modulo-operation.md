@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Different modulo operation in cpp and python"
-date: 2026-01-11 15:00:00
+date: 2026-01-11 15:00:00 +0800
 categories: [blog]
 ---
 
