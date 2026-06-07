@@ -1,0 +1,13 @@
+[
+  
+  {
+    "title": "Hello World - 博客开张",
+    "url": "/posts/hello-world/",
+    "categories": "Life",
+    "tags": "随笔, 博客",
+    "date": "2026-06-07 16:30:00 +0800",
+    "content": "你好，世界  这是用 Jekyll + Chirpy 主题搭建的 GitHub Pages 博客。  puts \"Hello, World!\"   功能     支持标签和分类   支持全文搜索   支持评论系统（Giscus，待配置）   支持暗色模式"
+  }
+  
+]
+
