@@ -1,59 +1,149 @@
 # AGENTS.md
 
-## What this branch is
+## What this repo is
 
-`gh-pages` of `kant0907/kant0907.github.io`. It contains **only the pre-built
-static output** of a Jekyll site using the [Chirpy](https://github.com/cotes2020/jekyll-theme-chirpy)
-theme (v7.5.0, Jekyll 4.4.1). There is one commit, "deploy: 初始部署站点".
+Source Jekyll site for `kant0907/kant0907.github.io` on the `main` branch.
+Uses the [Chirpy](https://github.com/cotes2020/jekyll-theme-chirpy) theme
+(v7.5.0, Jekyll 4.4.1). GitHub Pages is **not** served from a `gh-pages`
+branch — it is built and deployed by
+[`.github/workflows/pages-deploy.yml`](.github/workflows/pages-deploy.yml) on
+every push to `main`.
 
-There is no source here:
-
-- no `_config.yml`, no `_data/`, no `_includes/`, no `_layouts/`, no `_sass/`
-- no `_posts/*.md` or any Markdown — every post is already an `index.html`
-- no `Gemfile`, no `package.json`, no lockfile
-- no `.github/` workflows, no pre-commit config, no `.cursorrules`, no
-  `opencode.json`
-
-`.nojekyll` is present at the repo root, so GitHub Pages is told to serve the
-files as-is and **must not** run Jekyll over them.
+This means the repo is the **source of truth**. Editing files here and
+pushing is the normal way to change the site.
 
 ## What this means for edits
 
-- This is a **deploy artifact**. Editing HTML/CSS/JS in place will be silently
-  overwritten the next time the source is built and pushed. Author content in
-  the real Jekyll source tree (likely a separate `main` branch or a different
-  repo) and regenerate from there.
-- Do **not** try `bundle exec jekyll serve`, `npm run …`, `pytest`, or any
-  build/lint/test command in this branch — there is nothing to run.
-- Do **not** regenerate the search index, sitemap, RSS feed, or service worker
-  by hand. They are produced by the Chirpy build (`assets/js/data/search.json`,
-  `sitemap.xml`, `feed.xml`, `sw.min.js` + `assets/js/data/swconf.js`).
+- You can edit `_posts/*.md`, `_config.yml`, theme overrides, assets, etc.
+  directly on `main` and push.
+- Do **not** hand-edit anything inside `_site/` — it is a build output that
+  is regenerated on every workflow run and is git-ignored.
+- Do **not** regenerate the search index, sitemap, RSS feed, or service
+  worker by hand. They are produced by `bundle exec jekyll build` in CI.
+  Their canonical locations in the build output are `assets/js/data/`,
+  `sitemap.xml`, `feed.xml`, and `sw.min.js`.
 
 ## Layout worth knowing
 
-- Posts live at `posts/<slug>/index.html` (pretty permalinks, nested per
-  post — Chirpy default).
-- `categories/` and `tags/` are also nested directories, one folder per term.
-- `archives/index.html` is the chronological archive.
-- `about/index.html` is a standalone page.
-- `assets/css/jekyll-theme-chirpy.css` is the compiled theme stylesheet
-  (do not hand-edit; re-build the theme).
-- `assets/js/dist/*.min.js` are pre-bundled theme scripts; `assets/js/data/`
-  holds generated data files (`search.json`, `mathjax.js`, `swconf.js`).
-- `assets/lib/` vendors third-party JS/CSS (mermaid, mathjax, fontawesome,
-  glightbox, tocbot, simple-jekyll-search, dayjs, clipboard, loading-attribute-
-  polyfill). They are refreshed by `assets/lib/update.sh`, not by hand.
+- `_posts/YYYY-MM-DD-<slug>.md` — published posts. Front matter is required
+  (see existing posts for the shape).
+- `_drafts/` — drafts. Not built unless `--drafts` is passed; safe staging
+  area for in-progress posts.
+- `_data/`, `_tabs/`, `_plugins/` — theme/site-config dirs.
+- `_site/` — generated site, ephemeral, do not edit.
+- `assets/` — user assets (images etc.). The theme's vendored libs live
+  under `assets/lib/` and are refreshed by `assets/lib/update.sh`, not by
+  hand.
+- `.github/workflows/pages-deploy.yml` — build + `htmlproofer` + deploy to
+  GitHub Pages. Triggers on push to `main`.
 
-## Site identity (verified from `index.html` and `posts/hello-world/index.html`)
+## Site identity (verified from `_config.yml` and existing posts)
 
 - Canonical URL: `https://kant0907.github.io/`
 - Site name / title: `TestBlog`
-- Default language: `zh-CN` (Simplified Chinese) — `html lang="zh-CN"`,
-  `og:locale: zh_CN`. Keep new pages consistent with this.
-- Theme color tags already declare light/dark variants — don't drop them.
+- Default language: `zh-CN` (Simplified Chinese). Keep new pages consistent
+  with this. Mixed Chinese/English post bodies are fine.
+- Timezone: `Asia/Shanghai`. Use `+0800` in front-matter dates.
+- Existing reading notes use `categories: [Reading, Notes]` and 2–4 short
+  `tags:`. Match that style unless the post clearly belongs elsewhere.
 
-## When the user asks to "add a post" or "change the theme"
+## Publishing workflow (content → live site)
 
-Confirm with the user where the source Jekyll project lives before doing
-anything. The right answer is almost always "edit the source repo and rebuild",
-not "edit a file in this branch".
+End-to-end process for shipping a new post. There is no local Jekyll build
+step in this repo's flow — the workflow builds in CI, and verification is
+done against the live GitHub Pages URL.
+
+### 1. Confirm content
+
+- Author in `_drafts/YYYY-MM-DD-<slug>.md` first. Jekyll skips drafts by
+  default, so it is a safe staging area.
+- Front matter shape (required keys):
+  ```yaml
+  ---
+  title: <post title>
+  date: YYYY-MM-DD HH:MM:SS +0800
+  categories: [Reading, Notes]   # match existing posts
+  tags: [slug, book, fiction]    # 2–4 short tags
+  description: <one-line summary, used in meta and listings>
+  ---
+  ```
+- File name pattern: `YYYY-MM-DD-<slug>.md`. The slug determines the public
+  URL: `/posts/<slug>/`.
+- For long-form reading notes, follow the structure of
+  `_posts/2026-06-08-hillbilly-elegy-reading-notes-day-1.md` (sections,
+  bolded terms, short quotes from the source material).
+
+### 2. Publish
+
+- Move the file from `_drafts/` to `_posts/`. On PowerShell:
+  ```powershell
+  Move-Item -LiteralPath "_drafts\<file>.md" -Destination "_posts\<file>.md"
+  ```
+- Verify the file is on disk at the new path before committing.
+
+### 3. Commit and push
+
+- Inspect state before committing:
+  ```bash
+  git status
+  git diff
+  ```
+- Stage only the intended files:
+  ```bash
+  git add _posts/<file>.md
+  ```
+- Commit with a short message matching the repo's style. Existing
+  convention is `post: <short description>` (e.g. `post: Project Hail Mary
+  chapter 1 notes`).
+- Push to `main`:
+  ```bash
+  git push origin main
+  ```
+- If the push fails with
+  `Failed to connect to 127.0.0.1:33210 ...`, the local proxy (set in
+  `git config http.proxy`) is down. Either start the VPN/Clash/etc. that
+  provides it and retry, or temporarily unset the proxy for this repo:
+  ```bash
+  git config --unset http.proxy
+  git config --unset https.proxy
+  ```
+  Re-set it after the push if the unset was only meant to be temporary.
+
+### 4. Wait for the workflow and verify the live site
+
+- Watch the run: `gh run list --limit 1` or open the Actions tab. The
+  workflow runs `htmlproofer` and may fail on broken internal links (e.g.
+  a renamed post slug). If it fails, read the log, fix the link, and push
+  again.
+- Once the run is `completed / success`, verify the live site by fetching
+  three URLs:
+  1. The post page: `https://kant0907.github.io/posts/<slug>/`
+  2. The homepage: `https://kant0907.github.io/`
+  3. The new tag page (if you added a new tag):
+     `https://kant0907.github.io/tags/<tag>/`
+- On the post page, confirm: title, date, author, reading time, body
+  rendered, categories and tags at the bottom.
+- On the homepage, confirm the post appears as the **first** card and the
+  sidebar lists the new tag and category.
+- **Hard refresh the browser** (`Ctrl+Shift+R`) or open a private window
+  before declaring it done. The PWA service worker caches the homepage
+  and will keep serving the old version for a while after deploy. The
+  new post's URL is fetched fresh on first visit, so a missing homepage
+  post + visible post URL is the classic symptom of a stale sw cache, not
+  a deploy failure.
+
+## Common pitfalls
+
+- **PWA cache hides new content.** Clear site data
+  (DevTools → Application → Storage → Clear site data), unregister the
+  service worker, or just use a private window to bypass it.
+- **`htmlproofer` fails in CI.** Check the run log for the offending URL.
+  Usually an old internal link to a renamed post. Fix and push.
+- **Push fails with proxy error.** See step 3.
+- **404 on a new post URL after a successful deploy.** Confirm the file
+  is in `_posts/`, the date in the filename matches the date in the front
+  matter, the slug in the filename matches the URL you are checking, and
+  the workflow has actually completed (not still queued / failed).
+- **Editing `_site/` directly.** It looks tempting because it is what
+  GitHub Pages serves, but any change there is wiped on the next
+  workflow run. Edit the source and let CI rebuild.
